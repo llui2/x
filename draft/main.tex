@@ -60,7 +60,7 @@ At the input,
 \end{bmatrix}.
 \label{eq:stacked-embedding}
 \end{equation}
-The vector notation makes the operation on one token transparent, while the matrix notation shows how all tokens are processed together in an implementation. Both describe the same object. During a forward pass the parameters are fixed, while the rows of $\mathbf X^\ell$ change with depth.
+The vector notation makes the operation on one token transparent, while the matrix notation shows how all tokens are processed together in an implementation. Both describe the same object. We use this convention throughout: $i$ labels the receiving token, $j$ labels another token when it acts as a source in attention, $e$ labels an expert, $\ell$ labels network depth, and $n$ labels an optimization step. Bold lowercase Latin letters denote finite-dimensional state vectors, bold uppercase Latin letters denote matrices obtained by stacking or linearly mapping those vectors, and $\theta$ and $\phi$ denote collections of trainable parameters. During a forward pass the parameters are fixed, while the rows of $\mathbf X^\ell$ change with depth.
 
 The basic interaction in a Transformer is self-attention \cite{vaswani2017}. For one attention head, each state is projected into a query, key, and value,
 \begin{equation}
@@ -453,13 +453,32 @@ h_e(\mathbf x_i;\theta_e).
 Unlike ordinary matrix multiplication, the expert outputs depend on $e$ through different parameter sets $\theta_e$. The router matrix therefore specifies a token-dependent mixture of functions rather than a fixed linear map.
 Sparse MoE models evaluate only the experts with the largest router scores \cite{shazeer2017,fedus2022}. If $S(\mathbf x)$ is the set of the top $k$ experts, the selected weights are usually renormalized on $S(\mathbf x)$. Expert-choice routing changes the assignment rule by letting experts select tokens subject to capacity constraints \cite{zhou2022}. These implementation choices matter dynamically. Dense softmax routing is smooth, whereas top-$k$ routing is only smooth while the active set is unchanged; score crossings create switching events.
 
-The allocation vector $\mathbf a=(a_1,\ldots,a_K)$ lives on the same probability simplex that appears in evolutionary dynamics. The connection can be stated exactly before giving it any biological interpretation. Let
+The allocation vector lives on the same probability simplex that appears in evolutionary dynamics. To keep the geometry explicit, write the router scores and allocations as column vectors,
 \begin{equation}
+\mathbf z
+=
+\begin{bmatrix}
+z_1\\
+z_2\\
+\vdots\\
+z_K
+\end{bmatrix},
+\qquad
+\mathbf a
+=
+\begin{bmatrix}
+a_1\\
+a_2\\
+\vdots\\
+a_K
+\end{bmatrix},
+\qquad
 a_e
 =
 \frac{\exp(z_e)}{\sum_f\exp(z_f)}.
+\label{eq:router-vectors}
 \end{equation}
-Differentiating with respect to time gives
+Thus $\mathbf a\in\Delta^{K-1}$. The connection with evolutionary dynamics can be stated exactly before giving it any biological interpretation. Differentiating with respect to time gives
 \begin{equation}
 \dot a_e
 =
@@ -498,16 +517,30 @@ g_{\mathbf a}(\mathbf u,\mathbf v)
 \frac{u_e v_e}{a_e}.
 \label{eq:shahshahani}
 \end{equation}
-For a categorical distribution with probabilities $a_e$, this is exactly the Fisher information metric \cite{harper2009}. The Fisher metric measures local distinguishability between nearby probability distributions. In optimization, using its inverse to convert an ordinary derivative into a direction of motion gives the natural gradient \cite{amari1998}. The softmax Jacobian
+For a categorical distribution with probabilities $a_e$, this is exactly the Fisher information metric \cite{harper2009}. The Fisher metric measures local distinguishability between nearby probability distributions. In optimization, using its inverse to convert an ordinary derivative into a direction of motion gives the natural gradient \cite{amari1998}. The softmax Jacobian is
 \begin{equation}
 \mathbf M(\mathbf a)
 =
 \operatorname{diag}(\mathbf a)
 -
 \mathbf a\mathbf a^{\mathsf T}
+=
+\begin{bmatrix}
+a_1(1-a_1) & -a_1a_2 & \cdots & -a_1a_K\\
+-a_2a_1 & a_2(1-a_2) & \cdots & -a_2a_K\\
+\vdots & \vdots & \ddots & \vdots\\
+-a_Ka_1 & -a_Ka_2 & \cdots & a_K(1-a_K)
+\end{bmatrix}.
 \label{eq:mobility}
 \end{equation}
-is the corresponding inverse metric on the tangent space. Hence, if $f_e=\partial\Phi/\partial a_e$ for a scalar potential $\Phi(\mathbf a)$, Eq.~\eqref{eq:replicator} is natural-gradient ascent of $\Phi$. A general replicator field need not have such a potential.
+Every row and every column sums to zero, reflecting the constraint $\sum_e a_e=1$: an infinitesimal change can redistribute probability between experts but cannot change the total probability. In vector form,
+\begin{equation}
+\dot{\mathbf a}
+=
+\mathbf M(\mathbf a)\dot{\mathbf z}.
+\label{eq:softmax-vector-dynamics}
+\end{equation}
+The matrix $\mathbf M(\mathbf a)$ is the inverse Fisher--Shahshahani metric on the tangent space. Hence, if $f_e=\partial\Phi/\partial a_e$ for a scalar potential $\Phi(\mathbf a)$, Eq.~\eqref{eq:replicator} is natural-gradient ascent of $\Phi$. A general replicator field need not have such a potential.
 
 The discrete learning counterpart is exponential weighting. If the scores are accumulated according to
 \begin{equation}
