@@ -19,16 +19,48 @@ A language model receives text only after a tokenizer has converted it into a fi
 \qquad
 u_i\in\{1,\ldots,V\}.
 \end{equation}
-A token is therefore an element of the tokenizer vocabulary, not necessarily a complete word. Depending on the tokenizer, it can represent a word, part of a word, punctuation, whitespace, or another frequently occurring text fragment. The token identifier $u_i$ is only an integer label. The neural network first maps it to a vector. With embedding matrix $\mathbf E\in\mathbb R^{V\times d}$ and positional vector $\mathbf p_i\in\mathbb R^d$, the initial state of token $i$ is
+A token is therefore an element of the tokenizer vocabulary, not necessarily a complete word. Depending on the tokenizer, it can represent a word, part of a word, punctuation, whitespace, or another frequently occurring text fragment. The token identifier $u_i$ is only an integer label. The neural network first maps it to a vector. Let $\mathbf E\in\mathbb R^{V\times d}$ be the embedding matrix. Its $u$th row, denoted $\mathbf E_{u,:}$, stores the $d$ coordinates of vocabulary item $u$. We use column vectors for individual token states, so with positional vector $\mathbf p_i\in\mathbb R^d$ the initial state is
 \begin{equation}
 \mathbf x_i^0
 =
-\mathbf E_{u_i}
+\mathbf E_{u_i,:}^{\mathsf T}
 +
 \mathbf p_i.
 \label{eq:embedding}
 \end{equation}
-The dimension $d$ is the model width. The collection $\mathbf x^\ell=(\mathbf x_1^\ell,\ldots,\mathbf x_N^\ell)$ will denote the token states after layer $\ell$. This is the first dynamical object: during a forward pass the parameters are fixed, while the token representations change with depth.
+The dimension $d$ is the model width. It is useful to keep two equivalent views of the same states. Individually, $\mathbf x_i^\ell\in\mathbb R^d$ is a column vector. Collectively, the $N$ token states are stacked as the rows of
+\begin{equation}
+\mathbf X^\ell
+=
+\begin{bmatrix}
+(\mathbf x_1^\ell)^{\mathsf T}\\
+(\mathbf x_2^\ell)^{\mathsf T}\\
+\vdots\\
+(\mathbf x_N^\ell)^{\mathsf T}
+\end{bmatrix}
+\in\mathbb R^{N\times d}.
+\label{eq:stacked-state}
+\end{equation}
+At the input,
+\begin{equation}
+\mathbf X^0
+=
+\begin{bmatrix}
+\mathbf E_{u_1,:}\\
+\mathbf E_{u_2,:}\\
+\vdots\\
+\mathbf E_{u_N,:}
+\end{bmatrix}
++
+\begin{bmatrix}
+\mathbf p_1^{\mathsf T}\\
+\mathbf p_2^{\mathsf T}\\
+\vdots\\
+\mathbf p_N^{\mathsf T}
+\end{bmatrix}.
+\label{eq:stacked-embedding}
+\end{equation}
+The vector notation makes the operation on one token transparent, while the matrix notation shows how all tokens are processed together in an implementation. Both describe the same object. During a forward pass the parameters are fixed, while the rows of $\mathbf X^\ell$ change with depth.
 
 The basic interaction in a Transformer is self-attention \cite{vaswani2017}. For one attention head, each state is projected into a query, key, and value,
 \begin{equation}
@@ -45,7 +77,40 @@ The basic interaction in a Transformer is self-attention \cite{vaswani2017}. For
 \mathbf W_V\mathbf x_i.
 \label{eq:qkv}
 \end{equation}
-The query is the vector used by token $i$ to score other tokens, the key is the vector against which that query is compared, and the value is the information transmitted by the selected token. If the query and key dimension is $d_k$, the score from token $i$ to token $j$ is
+Here $\mathbf W_Q,\mathbf W_K\in\mathbb R^{d_k\times d}$ and $\mathbf W_V\in\mathbb R^{d_v\times d}$. The query is the vector used by token $i$ to score other tokens, the key is the vector against which that query is compared, and the value is the information transmitted by the selected token. Stacking these vectors gives
+\begin{equation}
+\mathbf Q
+=
+\begin{bmatrix}
+\mathbf q_1^{\mathsf T}\\
+\vdots\\
+\mathbf q_N^{\mathsf T}
+\end{bmatrix}
+=
+\mathbf X\mathbf W_Q^{\mathsf T},
+\qquad
+\mathbf K
+=
+\begin{bmatrix}
+\mathbf k_1^{\mathsf T}\\
+\vdots\\
+\mathbf k_N^{\mathsf T}
+\end{bmatrix}
+=
+\mathbf X\mathbf W_K^{\mathsf T},
+\qquad
+\mathbf V
+=
+\begin{bmatrix}
+\mathbf v_1^{\mathsf T}\\
+\vdots\\
+\mathbf v_N^{\mathsf T}
+\end{bmatrix}
+=
+\mathbf X\mathbf W_V^{\mathsf T}.
+\label{eq:qkv-matrices}
+\end{equation}
+Thus $\mathbf Q,\mathbf K\in\mathbb R^{N\times d_k}$ and $\mathbf V\in\mathbb R^{N\times d_v}$. Every row corresponds to one token. If the query and key dimension is $d_k$, the score from token $i$ to token $j$ is
 \begin{equation}
 s_{ij}
 =
@@ -84,25 +149,132 @@ a_{ij}
 \sum_j a_{ij}\mathbf v_j.
 \label{eq:attention}
 \end{equation}
-Thus attention is a state-dependent interaction: the coefficients $a_{ij}$ are recomputed from the current token states rather than fixed in advance. A multi-head layer repeats the same calculation with several independent sets of query, key, and value matrices and then linearly combines the resulting outputs.
-
-A Transformer block contains attention and a token-wise feed-forward network, both inserted through residual connections. Suppressing normalization and the distinction between the two residual substeps, the block can be written in the generic form
+The complete score matrix collects all pairwise query--key comparisons,
 \begin{equation}
-\mathbf x^{\ell+1}
+\mathbf S
 =
-\mathbf x^\ell
+\frac{\mathbf Q\mathbf K^{\mathsf T}}{\sqrt{d_k}}
 +
-F_\ell(\mathbf x^\ell;\theta),
+\mathbf M
+=
+\begin{bmatrix}
+\dfrac{\mathbf q_1^{\mathsf T}\mathbf k_1}{\sqrt{d_k}}+m_{11}
+&
+\cdots
+&
+\dfrac{\mathbf q_1^{\mathsf T}\mathbf k_N}{\sqrt{d_k}}+m_{1N}
+\\[6pt]
+\vdots & \ddots & \vdots
+\\[4pt]
+\dfrac{\mathbf q_N^{\mathsf T}\mathbf k_1}{\sqrt{d_k}}+m_{N1}
+&
+\cdots
+&
+\dfrac{\mathbf q_N^{\mathsf T}\mathbf k_N}{\sqrt{d_k}}+m_{NN}
+\end{bmatrix}.
+\label{eq:score-matrix}
+\end{equation}
+Applying softmax independently to every row gives
+\begin{equation}
+\mathbf A
+=
+\operatorname{softmax}_{\mathrm{row}}(\mathbf S)
+=
+\begin{bmatrix}
+a_{11} & a_{12} & \cdots & a_{1N}\\
+a_{21} & a_{22} & \cdots & a_{2N}\\
+\vdots & \vdots & \ddots & \vdots\\
+a_{N1} & a_{N2} & \cdots & a_{NN}
+\end{bmatrix},
+\qquad
+\mathbf A\mathbf 1=\mathbf 1.
+\label{eq:attention-matrix}
+\end{equation}
+The $i$th row is the probability distribution used by token $i$ to mix the value vectors. The complete attention output is therefore the matrix product
+\begin{equation}
+\mathbf Y
+=
+\mathbf A\mathbf V
+=
+\begin{bmatrix}
+\sum_j a_{1j}\mathbf v_j^{\mathsf T}\\
+\sum_j a_{2j}\mathbf v_j^{\mathsf T}\\
+\vdots\\
+\sum_j a_{Nj}\mathbf v_j^{\mathsf T}
+\end{bmatrix}
+\in\mathbb R^{N\times d_v}.
+\label{eq:attention-matrix-output}
+\end{equation}
+This is the same operation as Eq.~\eqref{eq:attention}, written for all tokens at once. The multiplication by $\mathbf A$ makes the interaction structure visible: rows index receiving tokens, columns index source tokens, and $a_{ij}$ controls how much of $\mathbf v_j$ enters token $i$.
+
+Thus attention is a state-dependent interaction: the matrix $\mathbf A$ is recomputed from the current token states rather than fixed in advance. A multi-head layer repeats the calculation with $H$ independent parameter sets. If $\mathbf Y^{(h)}$ is the output of head $h$, the head outputs are placed side by side and projected back to the model width,
+\begin{equation}
+\mathbf Y_{\mathrm{mh}}
+=
+\begin{bmatrix}
+\mathbf Y^{(1)} & \mathbf Y^{(2)} & \cdots & \mathbf Y^{(H)}
+\end{bmatrix}
+\mathbf W_O^{\mathsf T}.
+\label{eq:multihead}
+\end{equation}
+When every head has value dimension $d_v$, the bracketed matrix has size $N\times Hd_v$. The output projection $\mathbf W_O$ mixes information between heads and returns an $N\times d$ representation.
+
+A Transformer block contains attention and a token-wise feed-forward network, both inserted through residual connections. A common pre-normalization form is
+\begin{align}
+\mathbf Z^\ell
+&=
+\mathbf X^\ell
++
+\operatorname{MHA}
+\left(
+\operatorname{Norm}(\mathbf X^\ell)
+\right),
+\label{eq:pre-norm-attention}
+\\
+\mathbf X^{\ell+1}
+&=
+\mathbf Z^\ell
++
+\operatorname{FFN}
+\left(
+\operatorname{Norm}(\mathbf Z^\ell)
+\right).
+\label{eq:pre-norm-ffn}
+\end{align}
+Normalization is applied independently to the feature coordinates of each token. The feed-forward network is also applied row by row. With hidden width $d_f$,
+\begin{equation}
+\operatorname{FFN}(\mathbf X)
+=
+\sigma
+\left(
+\mathbf X\mathbf W_1^{\mathsf T}
++
+\mathbf 1\mathbf b_1^{\mathsf T}
+\right)
+\mathbf W_2^{\mathsf T}
++
+\mathbf 1\mathbf b_2^{\mathsf T},
+\label{eq:ffn-matrix}
+\end{equation}
+where $\mathbf W_1\in\mathbb R^{d_f\times d}$, $\mathbf W_2\in\mathbb R^{d\times d_f}$, and $\sigma$ acts elementwise. The column vector $\mathbf 1\in\mathbb R^N$ repeats the same bias for every token. Attention couples different rows of $\mathbf X$; the feed-forward network transforms each row independently.
+
+For dynamical arguments it is convenient to suppress these internal details and write one layer as
+\begin{equation}
+\mathbf X^{\ell+1}
+=
+\mathbf X^\ell
++
+F_\ell(\mathbf X^\ell;\theta),
 \label{eq:residual}
 \end{equation}
-where $\theta$ contains the trainable weights and $F_\ell$ contains the attention and feed-forward operations. The residual form is useful because it makes depth look like discrete time. Introducing a layer spacing $\Delta\tau$,
+where $\theta$ contains all trainable weights of the block. The residual form is useful because it makes depth look like discrete time. Introducing a layer spacing $\Delta\tau$,
 \begin{equation}
-\mathbf x^{\ell+1}
+\mathbf X^{\ell+1}
 =
-\mathbf x^\ell
+\mathbf X^\ell
 +
 \Delta\tau\,
-F(\mathbf x^\ell;\theta),
+F(\mathbf X^\ell;\theta),
 \end{equation}
 and assuming that the sequence of layers approaches a sufficiently regular vector field as $\Delta\tau\to0$, one obtains
 \begin{equation}
@@ -113,13 +285,40 @@ F_i(\mathbf x;\theta).
 \end{equation}
 This is the continuous-depth viewpoint developed for residual and neural ODE models \cite{he2016resnet,chen2018neuralode}. The variable $\tau$ is depth. It should be kept distinct from the time associated with parameter learning.
 
-For autoregressive language modeling, the final token state is projected back to the vocabulary. If $r_{ik}$ is the logit assigned at position $i$ to vocabulary token $k$, then
+For autoregressive language modeling, the final token states are projected back to the vocabulary. With output matrix $\mathbf W_{\mathrm{out}}\in\mathbb R^{V\times d}$ and bias $\mathbf b_{\mathrm{out}}\in\mathbb R^V$, the full matrix of vocabulary logits is
 \begin{equation}
+\mathbf R
+=
+\mathbf X^L\mathbf W_{\mathrm{out}}^{\mathsf T}
++
+\mathbf 1\mathbf b_{\mathrm{out}}^{\mathsf T}
+=
+\begin{bmatrix}
+r_{11} & \cdots & r_{1V}\\
+\vdots & \ddots & \vdots\\
+r_{N1} & \cdots & r_{NV}
+\end{bmatrix}
+\in\mathbb R^{N\times V}.
+\label{eq:vocabulary-logits}
+\end{equation}
+Each row contains one score for every vocabulary item. Applying softmax row by row gives
+\begin{equation}
+\mathbf P
+=
+\operatorname{softmax}_{\mathrm{row}}(\mathbf R)
+=
+\begin{bmatrix}
+p_{11} & \cdots & p_{1V}\\
+\vdots & \ddots & \vdots\\
+p_{N1} & \cdots & p_{NV}
+\end{bmatrix},
+\qquad
 p_{ik}
 =
-\frac{\exp(r_{ik})}{\sum_{q=1}^{V}\exp(r_{iq})}
+\frac{\exp(r_{ik})}{\sum_{q=1}^{V}\exp(r_{iq})}.
+\label{eq:vocabulary-probabilities}
 \end{equation}
-is the predicted probability. If the observed next token is $y_i$, the cross-entropy contribution is $-\log p_{i y_i}$. Cross-entropy is the negative log-likelihood of the observed categorical outcome; minimizing it is therefore equivalent to maximizing the probability assigned to the training sequence under the model.
+If the observed next token at position $i$ is $y_i$, the cross-entropy contribution is $-\log p_{i y_i}$. Cross-entropy is the negative log-likelihood of the observed categorical outcome; minimizing it is therefore equivalent to maximizing the probability assigned to the training sequence under the model. The output softmax has the same mathematical form as the attention softmax, but its index runs over vocabulary items rather than source-token positions.
 
 Training produces a second dynamics. Let $L(\theta)$ denote the loss averaged over the relevant data and let $B_n$ be the minibatch used at step $n$. Stochastic gradient descent gives
 \begin{equation}
@@ -217,15 +416,41 @@ a_e(\mathbf x)
 \frac{\exp(z_e)}{\sum_{f=1}^{K}\exp(z_f)}.
 \label{eq:router-softmax}
 \end{equation}
+For all $N$ tokens, collect the scores and allocations as
+\begin{equation}
+\mathbf Z
+=
+\begin{bmatrix}
+z_{11} & z_{12} & \cdots & z_{1K}\\
+z_{21} & z_{22} & \cdots & z_{2K}\\
+\vdots & \vdots & \ddots & \vdots\\
+z_{N1} & z_{N2} & \cdots & z_{NK}
+\end{bmatrix},
+\qquad
+\mathbf A_{\mathrm{E}}
+=
+\operatorname{softmax}_{\mathrm{row}}(\mathbf Z)
+=
+\begin{bmatrix}
+a_{11} & a_{12} & \cdots & a_{1K}\\
+a_{21} & a_{22} & \cdots & a_{2K}\\
+\vdots & \vdots & \ddots & \vdots\\
+a_{N1} & a_{N2} & \cdots & a_{NK}
+\end{bmatrix}.
+\label{eq:router-matrix}
+\end{equation}
+Here rows again index tokens, but columns now index experts rather than tokens. Every row of $\mathbf A_{\mathrm E}$ lies on $\Delta^{K-1}$ and describes how one token distributes its computation among the experts.
+
 A dense mixture returns
 \begin{equation}
-\mathbf y
+\mathbf y_i
 =
 \sum_{e=1}^{K}
-a_e(\mathbf x)
-\,h_e(\mathbf x;\theta_e).
+a_{ie}\,
+h_e(\mathbf x_i;\theta_e).
 \label{eq:dense-moe}
 \end{equation}
+Unlike ordinary matrix multiplication, the expert outputs depend on $e$ through different parameter sets $\theta_e$. The router matrix therefore specifies a token-dependent mixture of functions rather than a fixed linear map.
 Sparse MoE models evaluate only the experts with the largest router scores \cite{shazeer2017,fedus2022}. If $S(\mathbf x)$ is the set of the top $k$ experts, the selected weights are usually renormalized on $S(\mathbf x)$. Expert-choice routing changes the assignment rule by letting experts select tokens subject to capacity constraints \cite{zhou2022}. These implementation choices matter dynamically. Dense softmax routing is smooth, whereas top-$k$ routing is only smooth while the active set is unchanged; score crossings create switching events.
 
 The allocation vector $\mathbf a=(a_1,\ldots,a_K)$ lives on the same probability simplex that appears in evolutionary dynamics. The connection can be stated exactly before giving it any biological interpretation. Let
