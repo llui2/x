@@ -7,19 +7,6 @@
 \usepackage[margin=1.1in]{geometry}
 \usepackage{xcolor}
 \usepackage[colorlinks=true,linkcolor=blue!65!black,citecolor=blue!65!black,urlcolor=blue!65!black]{hyperref}
-\usepackage[
-  backend=bibtex,
-  style=numeric,
-  sorting=none,
-  giveninits=true,
-  maxbibnames=99,
-  url=false,
-  doi=false,
-  isbn=false
-]{biblatex}
-
-\addbibresource{refs.bib}
-
 \setlength{\parindent}{1.25em}
 \setlength{\parskip}{0pt}
 \setlength{\emergencystretch}{2em}
@@ -440,6 +427,123 @@ The last condition states that every active component has the same effective sco
 
 This identifies the main open theoretical step without requiring a new analogy. Starting from the actual finite gradient equations, one can ask when the score field in Eq.~\eqref{eq:score-velocity} closes approximately in terms of coarse allocation variables, when the resulting simplex dynamics has a potential, and when symmetric expert states lose stability. If such reductions exist, specialization, coexistence, exclusion, collapse, and switching can be studied with the fixed-point and bifurcation tools of dynamical systems and evolutionary theory. The role of the common language is to keep the assumptions behind each reduction explicit while allowing these results to be compared in the same notation.
 
-\printbibliography[title={References}]
+\begin{thebibliography}{99}
+
+\bibitem{he2016resnet}
+He, Kaiming, Zhang, Xiangyu, Ren, Shaoqing, Sun, Jian.
+\newblock \href{https://doi.org/10.1109/CVPR.2016.90}{Deep Residual Learning for Image Recognition}.
+\newblock \emph{Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition}, 770--778, 2016.
+
+\bibitem{chen2018neuralode}
+Chen, Ricky T. Q., Rubanova, Yulia, Bettencourt, Jesse, Duvenaud, David.
+\newblock \href{https://arxiv.org/abs/1806.07366}{Neural Ordinary Differential Equations}.
+\newblock \emph{Advances in Neural Information Processing Systems}, 31, 2018.
+
+\bibitem{saxe2014}
+Saxe, Andrew M., McClelland, James L., Ganguli, Surya.
+\newblock \href{https://arxiv.org/abs/1312.6120}{Exact solutions to the nonlinear dynamics of learning in deep linear neural networks}.
+\newblock \emph{International Conference on Learning Representations}, 2014.
+
+\bibitem{jacot2018}
+Jacot, Arthur, Gabriel, Franck, Hongler, Cl{\'e}ment.
+\newblock \href{https://arxiv.org/abs/1806.07572}{Neural Tangent Kernel: Convergence and Generalization in Neural Networks}.
+\newblock \emph{Advances in Neural Information Processing Systems}, 31, 2018.
+
+\bibitem{chizat2018}
+Chizat, L{\'e}na{\"i}c, Bach, Francis.
+\newblock \href{https://arxiv.org/abs/1805.09545}{On the Global Convergence of Gradient Descent for Over-parameterized Models using Optimal Transport}.
+\newblock \emph{Advances in Neural Information Processing Systems}, 31, 2018.
+
+\bibitem{vaswani2017}
+Vaswani, Ashish, Shazeer, Noam, Parmar, Niki, Uszkoreit, Jakob, Jones, Llion, Gomez, Aidan N., Kaiser, {\L}ukasz, Polosukhin, Illia.
+\newblock \href{https://arxiv.org/abs/1706.03762}{Attention Is All You Need}.
+\newblock \emph{Advances in Neural Information Processing Systems}, 30, 2017.
+
+\bibitem{ramsauer2021}
+Ramsauer, Hubert, Sch{\"a}fl, Bernhard, Lehner, Johannes, Seidl, Philipp, Widrich, Michael, Adler, Thomas, Gruber, Lukas, Holzleitner, Markus, Pavlovi{\'c}, Milena, Sandve, Geir Kjetil, Greiff, Victor, Kreil, David, Kopp, Michael, Klambauer, G{\"u}nter, Brandstetter, Johannes, Hochreiter, Sepp.
+\newblock \href{https://arxiv.org/abs/2008.02217}{Hopfield Networks is All You Need}.
+\newblock \emph{International Conference on Learning Representations}, 2021.
+
+\bibitem{castin2025}
+Castin, Val{\'e}rie, Ablin, Pierre, Carrillo, Jos{\'e} Antonio, Peyr{\'e}, Gabriel.
+\newblock \href{https://arxiv.org/abs/2501.18322}{A Unified Perspective on the Dynamics of Deep Transformers}.
+\newblock \emph{arXiv}, 2025.
+
+\bibitem{rigollet2025}
+Rigollet, Philippe.
+\newblock \href{https://arxiv.org/abs/2512.01868}{The Mean-Field Dynamics of Transformers}.
+\newblock \emph{arXiv}, 2025.
+
+\bibitem{herty2026}
+Herty, Michael, Liu, Hailiang.
+\newblock \href{https://arxiv.org/abs/2608.25055}{A Mean-Field Theory of Transformers: Well-Posedness of the Coupled Data--Parameter Dynamics and Global Convergence of Training}.
+\newblock \emph{arXiv}, 2026.
+
+\bibitem{shazeer2017}
+Shazeer, Noam, Mirhoseini, Azalia, Maziarz, Krzysztof, Davis, Andy, Le, Quoc V., Hinton, Geoffrey E., Dean, Jeff.
+\newblock \href{https://arxiv.org/abs/1701.06538}{Outrageously Large Neural Networks: The Sparsely-Gated Mixture-of-Experts Layer}.
+\newblock \emph{arXiv}, 2017.
+
+\bibitem{fedus2022}
+Fedus, William, Zoph, Barret, Shazeer, Noam.
+\newblock \href{https://www.jmlr.org/papers/v23/21-0998.html}{Switch Transformers: Scaling to Trillion Parameter Models with Simple and Efficient Sparsity}.
+\newblock \emph{Journal of Machine Learning Research}, 23(120), 1--39, 2022.
+
+\bibitem{zhou2022}
+Zhou, Yanqi, Lei, Tao, Liu, Hanxiao, Du, Nan, Huang, Yanping, Zhao, Vincent, Dai, Andrew M., Chen, Zhifeng, Le, Quoc V., Laudon, James.
+\newblock \href{https://arxiv.org/abs/2202.09368}{Mixture-of-Experts with Expert Choice Routing}.
+\newblock \emph{Advances in Neural Information Processing Systems}, 35, 2022.
+
+\bibitem{liao2026}
+Liao, Fangshuo, Kyrillidis, Anastasios.
+\newblock \href{https://proceedings.mlr.press/v300/liao26a.html}{Guided by the Experts: Provable Feature Learning Dynamic of Soft-Routed Mixture-of-Experts}.
+\newblock \emph{Proceedings of The 29th International Conference on Artificial Intelligence and Statistics}, 300, 3898--3906, 2026.
+
+\bibitem{lasy2026}
+Lasy, Ilya, Cai, Nora Yinuo, Ayonrinde, Kola.
+\newblock \href{https://proceedings.mlr.press/v306/lasy26a.html}{RouterInterp: Understanding Superposed Specialisation in Mixture of Experts Routing}.
+\newblock \emph{Proceedings of the 43rd International Conference on Machine Learning}, 306, 62858--62883, 2026.
+
+\bibitem{taylor1978}
+Taylor, Peter D., Jonker, Leo B..
+\newblock \href{https://doi.org/10.1016/0025-5564(78)90077-9}{Evolutionary stable strategies and game dynamics}.
+\newblock \emph{Mathematical Biosciences}, 40(1--2), 145--156, 1978.
+
+\bibitem{harper2009}
+Harper, Marc.
+\newblock \href{https://arxiv.org/abs/0911.1383}{Information Geometry and Evolutionary Game Theory}.
+\newblock \emph{arXiv}, 2009.
+
+\bibitem{amari1998}
+Amari, Shun-ichi.
+\newblock \href{https://doi.org/10.1162/089976698300017746}{Natural Gradient Works Efficiently in Learning}.
+\newblock \emph{Neural Computation}, 10(2), 251--276, 1998.
+
+\bibitem{mertikopoulos2016}
+Mertikopoulos, Panayotis, Sandholm, William H..
+\newblock \href{https://doi.org/10.1287/moor.2016.0778}{Learning in Games via Reinforcement and Regularization}.
+\newblock \emph{Mathematics of Operations Research}, 41(4), 1297--1324, 2016.
+
+\bibitem{sato2003}
+Sato, Yuzuru, Crutchfield, James P..
+\newblock \href{https://doi.org/10.1103/PhysRevE.67.015206}{Coupled replicator equations for the dynamics of learning in multiagent systems}.
+\newblock \emph{Physical Review E}, 67(1), 015206, 2003.
+
+\bibitem{hoover2023}
+Hoover, Benjamin, Liang, Yuchen, Pham, Bao, Panda, Rameswar, Strobelt, Hendrik, Chau, Duen Horng, Zaki, Mohammed J., Krotov, Dmitry.
+\newblock \href{https://proceedings.neurips.cc/paper_files/paper/2023/hash/57a9b97477b67936298489e3c1417b0a-Abstract-Conference.html}{Energy Transformer}.
+\newblock \emph{Advances in Neural Information Processing Systems}, 36, 27532--27559, 2023.
+
+\bibitem{wang2026}
+Wang, Xi, Hayou, Soufiane, Nalisnick, Eric.
+\newblock \href{https://arxiv.org/abs/2604.09780}{The Myth of Expert Specialization in MoEs: Why Routing Reflects Geometry, Not Necessarily Domain Expertise}.
+\newblock \emph{arXiv}, 2026.
+
+\bibitem{shannon1948}
+Shannon, Claude E..
+\newblock \href{https://doi.org/10.1002/j.1538-7305.1948.tb01338.x}{A Mathematical Theory of Communication}.
+\newblock \emph{Bell System Technical Journal}, 27(3), 379--423, 1948.
+
+\end{thebibliography}
 
 \end{document}
